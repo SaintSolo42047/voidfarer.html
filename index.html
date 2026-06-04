@@ -65,6 +65,8 @@ createStars();
 
 let resources = { fuel: 10, oxygen: 10, data: 10 };
 let progress = 0;
+let currentPlanet = null;
+let currentSite = null;
 
 function loadGame() {
   const saved = localStorage.getItem('voidfarerSave');
@@ -72,11 +74,13 @@ function loadGame() {
     const data = JSON.parse(saved);
     resources = data.resources || resources;
     progress = data.progress || progress;
+    currentPlanet = data.currentPlanet || null;
+    currentSite = data.currentSite || null;
   }
 }
 
 function saveGame() {
-  const data = { resources: resources, progress: progress };
+  const data = { resources, progress, currentPlanet, currentSite };
   localStorage.setItem('voidfarerSave', JSON.stringify(data));
 }
 
@@ -115,17 +119,18 @@ function doMove(moveName) {
   const sprite = document.getElementById('locationSprite');
   if (moveName === 'PlanetCrawl') {
     sprite.innerHTML = '🌍';
-    const economy = planetEconomy[roll(6)-1];
-    const culture = planetCulture[roll(12)-1];
-    log(`Planet Crawl - Economy: ${economy} | Culture: ${culture} | District: Market | Leader: Oligarchy | Rumor: Hidden Tech`);
+    currentPlanet = { economy: planetEconomy[roll(6)-1], culture: planetCulture[roll(12)-1] };
+    log(`Planet Crawl - Economy: ${currentPlanet.economy} | Culture: ${currentPlanet.culture} | You are now on this planet.`);
   } else if (moveName === 'SpaceTravel') {
     sprite.innerHTML = '🪐';
     resources.fuel = Math.max(0, resources.fuel - 2);
     const encounter = spaceEncounters[roll(6)-1];
     log(`Space Travel - -2 fuel | Encounter: ${encounter}`);
+    if (currentPlanet) log('You arrive at the planet you scouted earlier.');
   } else if (moveName === 'SiteDelve') {
     sprite.innerHTML = '🏛️';
     const area = siteAreas[roll(8)-1];
+    currentSite = area;
     log(`Site Delve - Area: ${area} | Feature: Computer terminal`);
   } else if (moveName === 'ShipCombat') {
     sprite.innerHTML = '⚔️';
@@ -155,7 +160,7 @@ function doMove(moveName) {
 loadGame();
 updateHUD();
 updateProgressBar();
-log('Visual progress bars added. Progress now shows as filled boxes.');
+log('Connected version loaded. Each button now feeds off the last action.');
 </script>
 </body>
 </html>
