@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Solo Voidfarer</title>
+<style>
+body { background: #000; color: #fff; font-family: monospace; margin: 0; padding: 0; }
+#game { display: flex; height: 100vh; }
+#left { width: 70%; background: #111; position: relative; overflow: hidden; }
+#right { width: 30%; background: #222; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; }
+#button-panel { flex-grow: 1; overflow-y: auto; margin-bottom: 10px; }
+button { display: block; width: 100%; margin: 5px 0; padding: 12px; background: #0066cc; color: white; border: none; font-size: 16px; }
+button:active { background: #0099ff; }
+#hud { background: #111; padding: 10px; border: 1px solid #333; margin-bottom: 10px; font-size: 14px; }
+#progress-bar { display: flex; gap: 4px; margin: 10px 0; }
+.bar-box { width: 18px; height: 18px; border: 2px solid #0f0; background: #000; }
+.bar-box.filled { background: #0f0; }
+#log { height: 160px; overflow-y: auto; background: #000; padding: 10px; font-size: 14px; border: 1px solid #333; }
+.star { position: absolute; background: white; border-radius: 50%; animation: twinkle 3s infinite; }
+.nebula { position: absolute; width: 100%; height: 100%; background: radial-gradient(circle at 30% 40%, rgba(0,80,200,0.4) 20%, rgba(150,0,200,0.3) 50%, rgba(0,200,150,0.25) 80%); pointer-events: none; }
+.sprite { font-size: 70px; position: absolute; top: 35%; left: 45%; transform: translate(-50%, -50%); }
+@keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 1; } }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="left">
+    <div class="nebula"></div>
+    <div id="stars"></div>
+    <div id="locationSprite" class="sprite">🚀</div>
+  </div>
+  <div id="right">
+    <h2 style="color:#0f0; margin-top:0;">SOLO VOIDFARER</h2>
+    <div id="hud">
+      Fuel: <span id="hud-fuel">10</span> | Oxygen: <span id="hud-oxygen">10</span> | Data: <span id="hud-data">10</span>
+    </div>
+    <div id="progress-bar"></div>
+    <div id="button-panel">
+      <button onclick="doMove('PlanetCrawl')">Planet Crawl</button>
+      <button onclick="doMove('SpaceTravel')">Space Travel</button>
+      <button onclick="doMove('SiteDelve')">Site Delve</button>
+      <button onclick="doMove('ShipCombat')">Ship Combat</button>
+      <button onclick="doMove('Progress')">Progress</button>
+      <button onclick="doMove('Scavenge')">Scavenge</button>
+      <button onclick="doMove('Explore')">Explore</button>
+      <button onclick="doMove('Status')">Status</button>
+    </div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+function createStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.left = Math.random()*100 + '%';
+    star.style.top = Math.random()*100 + '%';
+    star.style.animationDelay = Math.random()*3 + 's';
+    star.style.width = star.style.height = (Math.random()*3 + 1) + 'px';
+    container.appendChild(star);
+  }
+}
+createStars();
+
+let resources = { fuel: 10, oxygen: 10, data: 10 };
+let progress = 0;
+
+function loadGame() {
+  const saved = localStorage.getItem('voidfarerSave');
+  if (saved) {
+    const data = JSON.parse(saved);
+    resources = data.resources || resources;
+    progress = data.progress || progress;
+  }
+}
+
+function saveGame() {
+  const data = { resources: resources, progress: progress };
+  localStorage.setItem('voidfarerSave', JSON.stringify(data));
+}
+
+function updateHUD() {
+  document.getElementById('hud-fuel').innerText = resources.fuel;
+  document.getElementById('hud-oxygen').innerText = resources.oxygen;
+  document.getElementById('hud-data').innerText = resources.data;
+}
+
+function updateProgressBar() {
+  const bar = document.getElementById('progress-bar');
+  bar.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const box = document.createElement('div');
+    box.className = 'bar-box';
+    if (i < progress) box.classList.add('filled');
+    bar.appendChild(box);
+  }
+}
+
+function log(text) {
+  const logEl = document.getElementById('log');
+  logEl.innerHTML += '<br>' + text;
+  logEl.scrollTop = logEl.scrollHeight;
+  saveGame();
+}
+
+function roll(d) { return Math.floor(Math.random()*d) + 1; }
+
+const planetEconomy = ['Trade/Commerce','Mining/Industry','Agricultural','Crafts/Goods','Raiding/War','Cultural/Faith'];
+const planetCulture = ['Martial','Scholarly','Religious','Insular','Welcoming','Strange','Decadent','Intrigue','Arcane','Mysterious','Festive','Criminal'];
+const siteAreas = ['Control Room','Bridge','Cargo Bay','Medbay','Habitat','Engineering','Barracks','Workshop'];
+const spaceEncounters = ['Distress Signal','Derelict Ship','Mysterious Debris','Hidden Structure','Exotic Resources','UNKNOWN'];
+
+function doMove(moveName) {
+  const sprite = document.getElementById('locationSprite');
+  if (moveName === 'PlanetCrawl') {
+    sprite.innerHTML = '🌍';
+    const economy = planetEconomy[roll(6)-1];
+    const culture = planetCulture[roll(12)-1];
+    log(`Planet Crawl - Economy: ${economy} | Culture: ${culture} | District: Market | Leader: Oligarchy | Rumor: Hidden Tech`);
+  } else if (moveName === 'SpaceTravel') {
+    sprite.innerHTML = '🪐';
+    resources.fuel = Math.max(0, resources.fuel - 2);
+    const encounter = spaceEncounters[roll(6)-1];
+    log(`Space Travel - -2 fuel | Encounter: ${encounter}`);
+  } else if (moveName === 'SiteDelve') {
+    sprite.innerHTML = '🏛️';
+    const area = siteAreas[roll(8)-1];
+    log(`Site Delve - Area: ${area} | Feature: Computer terminal`);
+  } else if (moveName === 'ShipCombat') {
+    sprite.innerHTML = '⚔️';
+    const piloting = roll(6) + roll(6) + 2;
+    log(`Ship Combat - Piloting roll ${piloting} vs enemy. Hit!`);
+  } else if (moveName === 'Progress') {
+    sprite.innerHTML = '📈';
+    progress = Math.min(10, progress + 1);
+    log(`Progress: track filled by 1 box. Total: ${progress}/10`);
+    updateProgressBar();
+  } else if (moveName === 'Scavenge') {
+    resources.data = Math.min(10, resources.data + 1);
+    log('Scavenge: +1 data');
+    sprite.innerHTML = '📡';
+  } else if (moveName === 'Explore') {
+    resources.oxygen = Math.max(0, resources.oxygen - 1);
+    log('Explore: -1 oxygen');
+    sprite.innerHTML = '🧭';
+  } else if (moveName === 'Status') {
+    sprite.innerHTML = '📟';
+    log('Ship status: all modules online');
+  }
+  updateHUD();
+  saveGame();
+}
+
+loadGame();
+updateHUD();
+updateProgressBar();
+log('Visual progress bars added. Progress now shows as filled boxes.');
+</script>
+</body>
+</html>
